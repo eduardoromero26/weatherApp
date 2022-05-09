@@ -6,45 +6,23 @@ import 'package:http/http.dart' as http;
 import 'package:weather_app/screens/search_city.dart';
 import 'package:get/get.dart';
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-  final String title;
+class WeatherSearchCityScreen extends StatefulWidget {
+  final String cityValue;
+
+  const WeatherSearchCityScreen({Key? key, required this.cityValue})
+      : super(key: key);
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<WeatherSearchCityScreen> createState() =>
+      _WeatherSearchCityScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  var lat = 0.0;
-  var lng = 0.0;
+class _WeatherSearchCityScreenState extends State<WeatherSearchCityScreen> {
   Map objApi = {};
   bool isLoading = true;
   var key = "6c5f499f4449482a953183648220505";
   // variable to change the backroung color
   var bgColor;
   var textColor;
-
-  findMyLocation() async {
-    bool devicePermission;
-    devicePermission = await Geolocator.isLocationServiceEnabled();
-    if (devicePermission) {
-      var appLevel = await Geolocator.checkPermission();
-      if (appLevel == LocationPermission.denied) {
-        appLevel = await Geolocator.requestPermission();
-         
-      } else if (appLevel == LocationPermission.deniedForever) {
-        
-      }
-      var location = await Geolocator.getCurrentPosition();
-      setState(() {
-        lat = location.latitude;
-        lng = location.longitude;
-      });
-    } else {
-      // print("Error : GPS sensor permission issue, device level");
-    }
-    // print(lat.toString() + "Lat en LOCATION");
-    // print(lng.toString() + "lng en LOCATION");
-  }
 
   Future fetchWeatherApi() async {
     try {
@@ -54,15 +32,14 @@ class _MyHomePageState extends State<MyHomePage> {
         Uri.parse("http://api.weatherapi.com/v1/current.json?key=" +
             key.toString() +
             "&q=" +
-            lat.toString() +
-            ',' +
-            lng.toString()),
+            widget.cityValue),
         headers: {
           'Content-type': 'application/json; charset=UTF-8',
           'Accept': 'application/json',
         },
       );
       var data = jsonDecode(resp.body);
+      print(resp.body);
       return data;
     } catch (e) {
       return "Error";
@@ -70,8 +47,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void getWeatherDataFromApi() async {
-    await findMyLocation();
     var resp = await fetchWeatherApi();
+    print(resp);
     if (resp != "Error") {
       setState(() {
         isLoading = false;
@@ -81,10 +58,6 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {});
     }
     validateColor(objApi['current']['condition']);
-  }
-
-  printObj() {
-    print(objApi);
   }
 
   validateColor(temperature) {
@@ -97,6 +70,9 @@ class _MyHomePageState extends State<MyHomePage> {
         case "Clear":
           color = const Color.fromRGBO(255, 213, 0, 1);
           break;
+        case "Mist":
+          color = const Color.fromRGBO(216, 216, 216, 1);
+          break;
         case 'Cloudy':
           color = const Color.fromRGBO(216, 216, 216, 1);
           break;
@@ -106,6 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
         case "Moderate or heavy rain shower":
           color = Colors.blue;
           break;
+
         default:
           color = const Color.fromRGBO(255, 213, 0, 1);
       }
@@ -151,7 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator.adaptive())
-        : _buildContent()
+          : _buildContent(),
     );
   }
 
@@ -162,8 +139,8 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Colors.transparent,
         title: Text(objApi['location']['name'],
             style: GoogleFonts.poppins(
-              fontSize: 18,
               color: textColor,
+              fontSize: 18,
             )),
         centerTitle: true,
         elevation: 0,
@@ -199,9 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    objApi['location']['tz_id'] +
-                        ", " +
-                        objApi['location']['country'],
+                    objApi['location']['tz_id']+ ", " +objApi['location']['country'],
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
